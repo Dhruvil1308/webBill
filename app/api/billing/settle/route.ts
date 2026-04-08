@@ -33,7 +33,8 @@ export async function POST(req: NextRequest) {
 
       let activeCustomerId = null;
       if (customerPhone) {
-        const hId = hotelId || 'SFB-99';
+        if (!hotelId) throw new Error('Missing hotelId for customer identification');
+        const hId = hotelId;
         let customer = await tx.customer.findUnique({
           where: {
             phone_hotelId: {

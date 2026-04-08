@@ -1,51 +1,91 @@
 const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function seed() {
   try {
-    console.log('--- SEEDING ESSENTIAL DATA (JS) ---');
+    console.log('--- SEEDING PRODUCTION DATA (MongoDB) ---');
 
-    const hotelId = 'SFB-99';
-    await prisma.hotel.upsert({
+    const hotelId = '69d5fef477e0d929750efaf1';
+    
+    // 1. Create/Update Hotel
+    const hotel = await prisma.hotel.upsert({
       where: { id: hotelId },
-      update: {},
+      update: {
+        name: 'WebBill Production',
+        slug: 'webbill-prod',
+      },
       create: {
         id: hotelId,
-        name: 'Saffron Bay',
-        slug: 'saffron-bay',
+        name: 'WebBill Production',
+        slug: 'webbill-prod',
         subscriptionExpiry: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
       }
     });
+    console.log('Hotel created/updated:', hotel.name);
 
-    for (let i = 1; i <= 25; i++) {
-      const id = `T${i}`;
-      await prisma.table.upsert({
-        where: { id },
-        update: {},
-        create: { id, number: id, capacity: 4, hotelId }
-      });
+    // 2. Create Admin User
+    const adminEmail = 'admin@webbill.com';
+    const hashedPassword = await bcrypt.hash('admin123', 10);
+    
+    const admin = await prisma.user.upsert({
+      where: { email: adminEmail },
+      update: {
+        password: hashedPassword,
+        role: 'ADMIN',
+        hotelId: hotelId,
+      },
+      create: {
+        email: adminEmail,
+        name: 'System Admin',
+        password: hashedPassword,
+        role: 'ADMIN',
+        hotelId: hotelId,
+      }
+    });
+    console.log('Admin user created/updated:', admin.email);
+
+    // 3. Create Basic Tables
+    for (let i = 1; i <= 10; i++) {
+        const tableNum = `T${i}`;
+        await prisma.table.create({
+            data: {
+                number: tableNum,
+                capacity: 4,
+                hotelId: hotelId
+            }
+        }).catch(() => {}); // Ignore if already exists (create doesn't have upsert easily for non-unique)
     }
+    console.log('Tables initialized');
 
-    const catId = 'cat-starters';
-    await prisma.menuCategory.upsert({
-      where: { id: catId },
-      update: {},
-      create: { id: catId, name: 'Starters', hotelId }
+    // 4. Create Menu Categories & Items
+    const category = await prisma.menuCategory.create({
+        data: {
+            name: 'Starters',
+            hotelId: hotelId
+        }
+    }).catch(async () => {
+        return await prisma.menuCategory.findFirst({ where: { name: 'Starters', hotelId } });
     });
 
-    const items = [
-      { id: 't1', name: 'Gourmet Tomato Basil', price: 12 },
-      { id: 't2', name: 'Truffle Mushroom Soup', price: 15 },
-      { id: 't3', name: 'Paneer Tikka Platter', price: 18 },
-      { id: 't4', name: 'Crispy Avocado Toast', price: 14 },
-    ];
+    if (category) {
+        const items = [
+            { name: 'Paneer Tikka', price: 250, description: 'Classic grilled cottage cheese' },
+            { name: 'Crispy Corn', price: 180, description: 'Golden fried sweet corn' },
+            { name: 'Tomato Soup', price: 120, description: 'Fresh warm tomato basil soup' },
+        ];
 
-    for (const item of items) {
-      await prisma.menuItem.upsert({
-        where: { id: item.id },
-        update: {},
-        create: { ...item, categoryId: catId, hotelId, isAvailable: true }
-      });
+        for (const item of items) {
+           await prisma.menuItem.create({
+               data: {
+                   ...item,
+                   categoryId: category.id,
+                   hotelId: hotelId,
+                   isAvailable: true
+               }
+           }).catch(() => {});
+        }
+        console.log('Menu items initialized');
     }
 
     console.log('--- SEEDING COMPLETE ---');

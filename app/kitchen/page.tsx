@@ -8,9 +8,10 @@ import {
 import Link from 'next/link';
 
 import { useKitchenOrders } from '@/hooks/useKitchenOrders';
+import { getHotelId } from '@/lib/config';
 
 export default function KitchenDashboard() {
-  const { orders: rawOrders, isLive, error } = useKitchenOrders('SFB-99'); // hotelId will come from context in next step
+  const { orders: rawOrders, isLive, error } = useKitchenOrders(getHotelId());
   const [orders, setOrders] = useState<any[]>([]);
 
   useEffect(() => {

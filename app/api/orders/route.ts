@@ -6,6 +6,7 @@ import { z } from 'zod';
 // Input Validation Schema
 const orderSchema = z.object({
   tableId: z.string().min(1),
+  hotelId: z.string().optional(),
   items: z.array(z.object({
     id: z.string().min(1),
     quantity: z.number().int().positive(),
@@ -17,8 +18,6 @@ const orderSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const context = await getTenantContext();
-    if (!context) return unauthorizedResponse();
-
     const body = await req.json();
     const validation = orderSchema.safeParse(body);
     
@@ -27,7 +26,11 @@ export async function POST(req: NextRequest) {
     }
 
     const { tableId, items } = validation.data;
-    const { hotelId } = context;
+    const hotelId = context?.hotelId || validation.data.hotelId;
+
+    if (!hotelId) {
+      return NextResponse.json({ error: 'Hotel identification failed. Missing hotelId.' }, { status: 400 });
+    }
 
     // Verify table belongs to the hotel
     const table = await prisma.table.findUnique({
@@ -71,9 +74,12 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   try {
     const context = await getTenantContext();
-    if (!context) return unauthorizedResponse();
+    const { searchParams } = new URL(req.url);
+    const hotelId = context?.hotelId || searchParams.get('hotelId');
 
-    const { hotelId } = context;
+    if (!hotelId) {
+      return NextResponse.json({ error: 'hotelId is required' }, { status: 400 });
+    }
 
     const orders = await prisma.order.findMany({
       where: { hotelId },

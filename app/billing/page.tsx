@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { getHotelId } from '@/lib/config';
 
 export default function BillingDashboard() {
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
@@ -44,7 +45,7 @@ export default function BillingDashboard() {
 
   const fetchStats = async () => {
     try {
-      const res = await fetch('/api/billing/revenue?hotelId=SFB-99');
+      const res = await fetch(`/api/billing/revenue?hotelId=${getHotelId()}`);
       const data = await res.json();
       if (!data.error) {
         setStats(data);
@@ -58,7 +59,7 @@ export default function BillingDashboard() {
   const fetchOrders = async () => {
     try {
       await fetchStats();
-      const res = await fetch('/api/orders?hotelId=SFB-99');
+      const res = await fetch(`/api/orders?hotelId=${getHotelId()}`);
       const data = await res.json();
       // Filter for orders that need billing (READY or COMPLETED but not settled)
       setOrders(data.filter((o: any) => o.status !== 'CANCELLED' && o.status !== 'COMPLETED'));
@@ -261,7 +262,7 @@ export default function BillingDashboard() {
       const res = await fetch('/api/billing/shift', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hotelId: 'SFB-99' })
+        body: JSON.stringify({ hotelId: getHotelId() })
       });
       if (res.ok) {
         await fetchStats();
@@ -590,7 +591,7 @@ export default function BillingDashboard() {
                           body: JSON.stringify({ 
                             orderIds: tableData.orderIds,
                             paymentMethod: selectedPaymentMethod,
-                            hotelId: 'SFB-99',
+                            hotelId: getHotelId(),
                             customerPhone: customerPhone
                           })
                         });

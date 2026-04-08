@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { ChefHat, Printer, FileDown, ArrowLeft, TrendingUp } from 'lucide-react';
+import { getHotelId } from '@/lib/config';
 import Link from 'next/link';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -13,7 +14,7 @@ export default function PublicReceipt({ params }: { params: { orderId: string } 
   useEffect(() => {
     const fetchOrder = async () => {
       try {
-        const res = await fetch(`/api/orders/${params.orderId}?hotelId=SFB-99`);
+        const res = await fetch(`/api/orders/${params.orderId}?hotelId=${getHotelId()}`);
         const data = await res.json();
         setOrder(data);
       } catch (err) {
@@ -42,7 +43,7 @@ export default function PublicReceipt({ params }: { params: { orderId: string } 
     // Header
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(14);
-    doc.text('SAFFRON BAY', 40, 12, { align: 'center' });
+    doc.text('WEBBILL', 40, 12, { align: 'center' });
     
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);

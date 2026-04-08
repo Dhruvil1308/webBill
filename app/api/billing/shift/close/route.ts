@@ -4,7 +4,11 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { hotelId = 'SFB-99', closedBy } = body;
+    const { hotelId, closedBy } = body;
+
+    if (!hotelId) {
+      return NextResponse.json({ error: 'Missing hotelId' }, { status: 400 });
+    }
 
     const activeShift = await prisma.shift.findFirst({
       where: {

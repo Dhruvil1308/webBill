@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useCartStore } from '@/hooks/store/useCartStore';
 import { useOrder } from '@/hooks/useOrder';
+import { getHotelId } from '@/lib/config';
 
 // Views
 type View = 'DASHBOARD' | 'MENU';
@@ -30,7 +31,7 @@ export default function WaiterPanel() {
 
   const fetchTables = async () => {
     try {
-      const res = await fetch('/api/tables?hotelId=SFB-99');
+      const res = await fetch(`/api/tables?hotelId=${getHotelId()}`);
       const data = await res.json();
       setTables(data);
     } catch (err) {
@@ -41,7 +42,7 @@ export default function WaiterPanel() {
   // Fetch all orders for table status grid
   const fetchAllOrders = async () => {
     try {
-      const res = await fetch(`/api/orders?hotelId=SFB-99`);
+      const res = await fetch(`/api/orders?hotelId=${getHotelId()}`);
       const data = await res.json();
       
       // Calculate today's total orders (from midnight)
@@ -62,7 +63,7 @@ export default function WaiterPanel() {
 
   const fetchMenu = async () => {
     try {
-      const res = await fetch(`/api/menu?hotelId=SFB-99`);
+      const res = await fetch(`/api/menu?hotelId=${getHotelId()}`);
       const data = await res.json();
       setMenu(data);
       if (data.length > 0 && !activeCategory) {
@@ -96,7 +97,7 @@ export default function WaiterPanel() {
 
   const handlePassOrder = async () => {
     try {
-      await placeOrder(selectedTable || 'T1', 'SFB-99');
+      await placeOrder(selectedTable || 'T1', getHotelId());
       setCurrentView('DASHBOARD');
       setSelectedTable(null);
     } catch (error) {

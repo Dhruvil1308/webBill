@@ -4,7 +4,11 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const hotelId = searchParams.get('hotelId') || 'SFB-99';
+    const hotelId = searchParams.get('hotelId');
+
+    if (!hotelId) {
+      return NextResponse.json({ error: 'Missing hotelId parameter' }, { status: 400 });
+    }
 
     const categories = await prisma.menuCategory.findMany({
       where: { hotelId },
